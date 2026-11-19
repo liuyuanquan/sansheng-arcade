@@ -27,6 +27,20 @@ const GENRES = [
 // 仅列出已上架的游戏。
 const GAMES = [
   {
+    id: "tanke3d",
+    title: "坦克大战 3D",
+    en: "BATTLE CITY 3D",
+    url: "tanke3d.html",
+    cover: "covers/tanke3d.webp",
+    desc: "在立体战场中守卫鹰徽基地，单人或同屏双人迎战 35 关。可旋转视角，也可切换俯视。",
+    category: "3D",
+    genre: "射击",
+    tags: ["坦克", "基地防守", "同屏双人"],
+    added: "2026-11-19",
+    colors: ["#3ee6ff", "#2f5bd8"],
+    glyph: "坦"
+  },
+  {
     id: "tank2d",
     title: "坦克大战 2D",
     en: "BATTLE CITY",

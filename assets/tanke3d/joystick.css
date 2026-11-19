@@ -1,0 +1,26 @@
+#touch {
+  box-sizing: border-box;
+  align-items: flex-end;
+  padding-inline: max(14px, env(safe-area-inset-left)) max(14px, env(safe-area-inset-right));
+  bottom: max(12px, env(safe-area-inset-bottom));
+  pointer-events: none;
+}
+#stick, #rightBtns button { pointer-events: auto; touch-action: none; }
+#stick{position:relative;width:clamp(122px,36vw,156px);aspect-ratio:1;
+    box-sizing:border-box;border:2px solid #55515b;border-radius:50%;touch-action:none;
+    background:radial-gradient(circle,#28252d 0 47%,#343039 48% 49%,#211e26 50% 68%,#302b32 69%);
+    box-shadow:inset 0 2px 5px #0008,0 4px 0 #101014;}
+  #stick i{position:absolute;width:6px;height:6px;box-sizing:border-box;
+    border:solid #96909a;border-width:2px 2px 0 0;pointer-events:none;}
+  #stick i:nth-child(1){top:9%;left:50%;transform:translateX(-50%) rotate(-45deg);}
+  #stick i:nth-child(2){right:9%;top:50%;transform:translateY(-50%) rotate(45deg);}
+  #stick i:nth-child(3){bottom:9%;left:50%;transform:translateX(-50%) rotate(135deg);}
+  #stick i:nth-child(4){left:9%;top:50%;transform:translateY(-50%) rotate(-135deg);}
+  #stickKnob{position:absolute;width:42%;aspect-ratio:1;inset:0;margin:auto;border-radius:50%;
+    box-sizing:border-box;border:2px solid #867458;pointer-events:none;
+    background:radial-gradient(circle at 38% 28%,#706457,#443e3a 70%);
+    box-shadow:inset 0 2px 2px #c5ad8255,0 3px 5px #0009;transition:transform 90ms ease-out;}
+  #stick.engaged #stickKnob{border-color:#d4ae66;transition:none;}
+@media (orientation: landscape) {
+  #stick { width: clamp(108px, 18vw, 150px); }
+}

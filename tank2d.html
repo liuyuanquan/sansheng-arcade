@@ -86,11 +86,25 @@
   }
   #touch{display:none;width:min(98vw,560px);justify-content:space-between;align-items:center;
          user-select:none;-webkit-user-select:none;}
-  #dpad{display:grid;grid-template-columns:repeat(3,52px);grid-template-rows:repeat(3,52px);gap:4px;}
+  #touch{box-sizing:border-box;padding-inline:12px;}
+  #stick{position:relative;width:clamp(122px,36vw,156px);aspect-ratio:1;
+    box-sizing:border-box;border:2px solid #55515b;border-radius:50%;touch-action:none;
+    background:radial-gradient(circle,#28252d 0 47%,#343039 48% 49%,#211e26 50% 68%,#302b32 69%);
+    box-shadow:inset 0 2px 5px #0008,0 4px 0 #101014;}
+  #stick i{position:absolute;width:6px;height:6px;box-sizing:border-box;
+    border:solid #96909a;border-width:2px 2px 0 0;pointer-events:none;}
+  #stick i:nth-child(1){top:9%;left:50%;transform:translateX(-50%) rotate(-45deg);}
+  #stick i:nth-child(2){right:9%;top:50%;transform:translateY(-50%) rotate(45deg);}
+  #stick i:nth-child(3){bottom:9%;left:50%;transform:translateX(-50%) rotate(135deg);}
+  #stick i:nth-child(4){left:9%;top:50%;transform:translateY(-50%) rotate(-135deg);}
+  #stickKnob{position:absolute;width:42%;aspect-ratio:1;inset:0;margin:auto;border-radius:50%;
+    box-sizing:border-box;border:2px solid #867458;pointer-events:none;
+    background:radial-gradient(circle at 38% 28%,#706457,#443e3a 70%);
+    box-shadow:inset 0 2px 2px #c5ad8255,0 3px 5px #0009;transition:transform 90ms ease-out;}
+  #stick.engaged #stickKnob{border-color:#d4ae66;transition:none;}
   .tb{background:#1a1a22;border:2px solid #444;color:#ccc;border-radius:10px;font-size:20px;
       touch-action:none;display:flex;align-items:center;justify-content:center;}
   .tb:active{background:#3a3a48;}
-  #bU{grid-column:2;grid-row:1}#bL{grid-column:1;grid-row:2}#bR{grid-column:3;grid-row:2}#bD{grid-column:2;grid-row:3}
   #bFire{width:88px;height:88px;border-radius:50%;font-size:16px;background:#3a1c1c;border-color:#a33;}
   #rightBtns{display:flex;flex-direction:column;gap:10px;align-items:center;}
   #bPause{width:88px;height:34px;border-radius:8px;font-size:13px;}
@@ -107,11 +121,7 @@
       width:min(calc(100vw - 2 * var(--controls-width)), calc((100vh - 16px) * 528 / 448));
       width:min(calc(100vw - 2 * var(--controls-width)), calc((100dvh - 16px) * 528 / 448));
     }
-    #dpad {
-      grid-area:pad; width:min(calc(100% - 8px), 164px);
-      grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr);
-      aspect-ratio:1; gap:3px;
-    }
+    #stick {grid-area:pad;width:min(calc(100% - 14px),156px);}
     #rightBtns {grid-area:actions; flex-direction:column-reverse;}
   }
   /* 内嵌 NES 像素字体 Press Start 2P（latin 子集，~12KB）——标题屏复古字形 */
@@ -124,11 +134,9 @@
 <input type="file" id="mapfile" accept=".json,.tkmap,application/json" style="display:none">
 <div id="wrap"><canvas id="game" width="528" height="448" tabindex="0"></canvas></div>
 <div id="touch">
-  <div id="dpad">
-    <button class="tb" id="bU">▲</button>
-    <button class="tb" id="bL">◀</button>
-    <button class="tb" id="bR">▶</button>
-    <button class="tb" id="bD">▼</button>
+  <div id="stick" role="group" aria-label="移动摇杆，拖动转向，松手回中">
+    <i aria-hidden="true"></i><i aria-hidden="true"></i><i aria-hidden="true"></i><i aria-hidden="true"></i>
+    <span id="stickKnob"></span>
   </div>
   <div id="rightBtns">
     <button class="tb" id="bPause">开始/暂停</button>
@@ -695,7 +703,7 @@ function updatePlayer(p,inp){
   if(p.shield>0)p.shield--;
   if(p.stun>0){p.stun--;return;}
   if(inp.cd>0)inp.cd--;
-  var d=inp.stack.length?inp.stack[inp.stack.length-1]:-1;
+  var d=playerDirection(p.idx);
   if(d>=0){
     setDir(p,d);
     tryMove(p,p.speed);
@@ -704,13 +712,14 @@ function updatePlayer(p,inp){
     tryMove(p,1);
     p.slide--;
   }
-  if(inp.fire&&inp.cd<=0){
+  if((inp.fire||(p.idx===0&&firePointer!==null))&&inp.cd<=0){
     if(fire(p))inp.cd=10;
   }
 }
 
 // ---------- 关卡流程 ----------
 function startStage(idx){
+  resetTouchInput();
   stage=idx;
   stageKills=[[0,0,0,0],[0,0,0,0]];   // 新关重置本关击杀统计
   loadLevel(idx);
@@ -885,7 +894,7 @@ function engPulse(f0,f1,t0,dur,vol){
 function anyPlayerMoving(){
   if(state!=='play'||paused)return false;
   for(var i=0;i<players.length;i++)
-    if(players[i].alive&&inputs[i].stack.length>0)return true;
+    if(players[i].alive&&playerDirection(i)>=0)return true;
   return false;
 }
 function engineTick(){
@@ -1347,7 +1356,7 @@ function drawMenu(){
   ctx.fillText('ALL RIGHTS RESERVED',CW/2,418);
   // 玩法介绍（最底部，小字体）
   ctx.font='9px "Courier New",monospace';ctx.fillStyle='#cccccc';
-  ctx.fillText('WASD / ARROWS MOVE   SPACE FIRE   ENTER START   M MUTE',CW/2,436);
+  ctx.fillText(touchControls.matches ? '左手拖动摇杆移动，右手按住发射' : 'WASD / ARROWS MOVE   SPACE FIRE   ENTER START   M MUTE',CW/2,436);
   ctx.textAlign='left';
 }
 // 像素体文字快捷绘制
@@ -1409,6 +1418,7 @@ function drawPauseMenu(){
 var touchControls = window.matchMedia('(pointer:coarse)');
 function setPaused(value, quiet) {
   if (paused === value) return;
+  resetTouchInput();
   paused = value;
   if (value) {
     pauseSel = 0;
@@ -1590,20 +1600,70 @@ cv.addEventListener('pointerdown',function(ev){
   }else if(state==='score')advanceFromScore();
   else if(state==='over'||state==='win')state='menu';
 });
-function bindBtn(id,code){
-  var el=document.getElementById(id);
-  if(!el)return;
-  function dn(ev){ev.preventDefault();initAudio();press(code,true);}
-  function up(ev){ev.preventDefault();press(code,false);}
-  el.addEventListener('pointerdown',dn);
-  el.addEventListener('pointerup',up);
-  el.addEventListener('pointercancel',up);
-  el.addEventListener('pointerleave',up);
-  el.addEventListener('contextmenu',function(e){e.preventDefault();});
+var stick=document.getElementById('stick'), knob=document.getElementById('stickKnob');
+var fireButton=document.getElementById('bFire');
+var stickPointer=null, firePointer=null, stickDir=-1;
+
+function playerDirection(index){
+  if(index===0&&stickDir>=0)return stickDir;
+  var stack=inputs[index].stack;
+  return stack.length?stack[stack.length-1]:-1;
 }
-bindBtn('bU','KeyW');bindBtn('bD','KeyS');
-bindBtn('bL','KeyA');bindBtn('bR','KeyD');
-bindBtn('bFire','Space');
+function releaseStick(){
+  var id=stickPointer;
+  stickPointer=null;
+  stickDir=-1;
+  stick.classList.remove('engaged');
+  knob.style.transform='';
+  if(id!==null&&stick.hasPointerCapture(id))stick.releasePointerCapture(id);
+}
+function releaseFire(){
+  var id=firePointer;
+  firePointer=null;
+  if(id!==null&&fireButton.hasPointerCapture(id))fireButton.releasePointerCapture(id);
+}
+function resetTouchInput(){
+  releaseStick();
+  releaseFire();
+}
+function moveStick(ev){
+  if(ev.pointerId!==stickPointer)return;
+  var rect=stick.getBoundingClientRect(), radius=rect.width/2;
+  var x=ev.clientX-rect.left-radius, y=ev.clientY-rect.top-rect.height/2;
+  var distance=Math.hypot(x,y), travel=radius-knob.offsetWidth/2-2;
+  var scale=distance>travel?travel/distance:1;
+  knob.style.transform='translate('+x*scale+'px,'+y*scale+'px)';
+  if(distance<radius*(stickDir<0?0.20:0.13)){stickDir=-1;return;}
+  // 在对角线附近保留原轴向，避免拇指轻微摆动时连续误转。
+  var ax=Math.abs(x), ay=Math.abs(y), horizontal=ax>ay;
+  if(stickDir>=0&&Math.min(ax,ay)>Math.max(ax,ay)*0.80)
+    horizontal=stickDir===LEFT||stickDir===RIGHT;
+  var next=horizontal?(x<0?LEFT:RIGHT):(y<0?UP:DOWN);
+  if(next===stickDir)return;
+  stickDir=next;
+  if(state==='menu'||paused)press(['KeyW','KeyD','KeyS','KeyA'][next],true);
+}
+stick.addEventListener('pointerdown',function(ev){
+  if(stickPointer!==null||ev.button!==0)return;
+  ev.preventDefault();initAudio();
+  stickPointer=ev.pointerId;
+  stick.setPointerCapture(ev.pointerId);
+  stick.classList.add('engaged');
+  moveStick(ev);
+});
+stick.addEventListener('pointermove',moveStick);
+fireButton.addEventListener('pointerdown',function(ev){
+  if(firePointer!==null||ev.button!==0||paused||(state!=='play'&&state!=='intro'))return;
+  ev.preventDefault();initAudio();
+  firePointer=ev.pointerId;
+  fireButton.setPointerCapture(ev.pointerId);
+});
+['pointerup','pointercancel','lostpointercapture'].forEach(function(type){
+  stick.addEventListener(type,function(ev){if(ev.pointerId===stickPointer)releaseStick();});
+  fireButton.addEventListener(type,function(ev){if(ev.pointerId===firePointer)releaseFire();});
+});
+window.addEventListener('resize',resetTouchInput);
+window.addEventListener('blur',resetTouchInput);
 (function(){
   var el=document.getElementById('bPause');
   if(el)el.addEventListener('pointerdown',function(e){e.preventDefault();enterAction();});
