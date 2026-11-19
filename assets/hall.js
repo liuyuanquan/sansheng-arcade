@@ -216,7 +216,7 @@ function card(g) {
       <h3>${esc(g.title)}<span class="en">${esc(g.en || "")}</span></h3>
       <p>${esc(g.desc)}</p>
       ${tagsHtml(g)}
-      <div class="meta"><span>原作上线 ${esc(g.added)}</span><span class="play">${g.preview ? "查看封面" : "开始游戏"}</span></div>
+      <div class="meta"><span>上架 ${esc(g.added)}</span><span class="play">${g.preview ? "查看封面" : "开始游戏"}</span></div>
     </div>
   </a>`;
 }
