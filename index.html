@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0e0c16">
+  <meta name="description" content="三省街机游戏大厅。">
+  <title>三省街机｜游戏大厅</title>
+  <meta property="og:site_name" content="三省街机">
+  <meta property="og:title" content="三省街机｜游戏大厅">
+  <link rel="icon" href="assets/rukawa-avatar.png">
+  <link rel="stylesheet" href="assets/fonts/fonts.css">
+  <link rel="stylesheet" href="assets/hall.css">
+</head>
+<body>
+  <div class="wrap">
+    <header class="topbar">
+      <a class="brand" href="index.html" aria-label="三省街机游戏大厅">
+        <img src="assets/rukawa-avatar.png" alt="" width="28" height="28">
+        <span>三省街机</span>
+      </a>
+    </header>
+
+    <section class="hero">
+      <div class="hero-art" aria-hidden="true">
+        <div class="sky"></div>
+        <div class="stars" id="stars"></div>
+        <svg class="ridge" viewBox="0 0 1200 100" preserveAspectRatio="none">
+          <path d="M0 100 L0 70 L40 52 L70 64 L120 30 L160 58 L200 44 L250 72 L290 60 L330 22 L380 60 L420 48 L470 70 L520 38 L560 60 L600 50 L640 62 L690 40 L730 58 L780 26 L830 56 L870 46 L920 68 L960 50 L1010 34 L1060 62 L1100 44 L1150 58 L1200 48 L1200 100 Z" fill="#150c22"/>
+          <path d="M0 70 L40 52 L70 64 L120 30 L160 58 L200 44 L250 72 L290 60 L330 22 L380 60 L420 48 L470 70 L520 38 L560 60 L600 50 L640 62 L690 40 L730 58 L780 26 L830 56 L870 46 L920 68 L960 50 L1010 34 L1060 62 L1100 44 L1150 58 L1200 48" fill="none" stroke="#ff4f8b" stroke-opacity=".6" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+        </svg>
+        <div class="floor"></div>
+        <div class="art-left">
+          <div class="hud">1UP<b>000420</b></div>
+          <div id="sprites-l"></div>
+          <div class="credit">CREDIT <b>01</b></div>
+        </div>
+        <div class="art-right">
+          <div class="sun"></div>
+          <div class="hud">HI-SCORE<b>999900</b></div>
+          <div id="sprites-r"></div>
+          <div class="press">PRESS START</div>
+        </div>
+      </div>
+
+      <div class="hero-text">
+        <span class="kicker">INSERT COIN</span>
+        <h1>三省<span class="accent">街机</span></h1>
+        <div class="stats" id="stats"></div>
+      </div>
+    </section>
+
+    <section class="showcase" id="showcase" hidden aria-roledescription="carousel" aria-label="即刻开玩">
+      <div class="showcase-head">
+        <h2>即刻开玩</h2>
+        <div class="ctrl">
+          <button type="button" class="playpause" id="sc-toggle" aria-label="暂停自动播放">
+            <svg class="i-pause" viewBox="0 0 16 16" fill="currentColor"><rect x="3" y="2" width="3.5" height="12"/><rect x="9.5" y="2" width="3.5" height="12"/></svg>
+            <svg class="i-play" viewBox="0 0 16 16" fill="currentColor"><path d="M4 2 L14 8 L4 14 Z"/></svg>
+          </button>
+          <button type="button" id="sc-prev" aria-label="上一个"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M10 3 L5 8 L10 13"/></svg></button>
+          <button type="button" id="sc-next" aria-label="下一个"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 3 L11 8 L6 13"/></svg></button>
+        </div>
+      </div>
+      <div class="stage" id="stage" aria-live="off"></div>
+      <div class="tabs" id="tabs" role="tablist" aria-label="选择可玩的游戏"></div>
+    </section>
+
+    <section aria-labelledby="all-games">
+      <div class="section-head">
+        <h2 id="all-games">全部游戏<small id="count"></small></h2>
+        <div class="toolbar">
+          <div class="chips" id="chips" role="group" aria-label="按画面维度筛选"></div>
+          <input class="search" id="search" type="search" placeholder="搜索游戏…" aria-label="搜索游戏">
+        </div>
+      </div>
+      <div class="chips genres" id="genres" role="group" aria-label="按游戏类型筛选"></div>
+      <div class="grid" id="grid"></div>
+      <noscript>启用 JavaScript 即可浏览游戏封面与介绍。</noscript>
+    </section>
+
+    <footer>
+      <span>三省街机</span>
+    </footer>
+  </div>
+
+  <script src="assets/catalog.js"></script>
+  <script src="assets/hall.js"></script>
+</body>
+</html>

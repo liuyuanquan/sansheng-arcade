@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0e0c16">
+  <title>封面预览 · 三省街机</title>
+  <link rel="icon" href="assets/rukawa-avatar.png">
+  <link rel="stylesheet" href="assets/fonts/fonts.css">
+  <link rel="stylesheet" href="assets/hall.css">
+  <link rel="stylesheet" href="assets/preview.css">
+</head>
+<body>
+  <main class="preview">
+    <a class="back" href="index.html#all-games">← 返回游戏大厅</a>
+    <article>
+      <img id="art" alt="" hidden>
+      <div class="details">
+        <p id="genre"></p>
+        <div class="preview-heading">
+          <h1 id="title">未找到这款游戏</h1>
+          <span id="status" hidden>仅供预览</span>
+        </div>
+        <p id="subtitle"></p>
+        <p id="description"></p>
+      </div>
+    </article>
+  </main>
+  <script src="assets/catalog.js"></script>
+  <script src="archive/cover-catalog.js"></script>
+  <script>
+    const game = [...GAMES, ...ARCHIVED_COVERS].find(entry => entry.preview && entry.id === new URLSearchParams(location.search).get('id'));
+    if (game) {
+      document.title = game.title + ' · 封面预览 · 三省街机';
+      const art = document.getElementById('art');
+      art.src = game.cover;
+      art.alt = game.title + '封面';
+      art.hidden = false;
+      document.documentElement.style.setProperty('--accent', game.colors[0]);
+      document.getElementById('genre').textContent = game.category + ' · ' + game.genre;
+      document.getElementById('title').textContent = game.title;
+      document.getElementById('subtitle').textContent = game.en;
+      document.getElementById('description').textContent = game.desc;
+      document.getElementById('status').hidden = false;
+    }
+  </script>
+</body>
+</html>
