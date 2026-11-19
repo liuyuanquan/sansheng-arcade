@@ -7,7 +7,7 @@
  * category  画面维度：3D / 2D，会自动生成筛选按钮
  * genre     游戏类型，必须是 GENRES 里的一项（类型筛选按钮按 GENRES 顺序生成）
  * tags      标签数组
- * added     原作上线日期 YYYY-MM-DD（用于排序）
+ * added     本站上架日期 YYYY-MM-DD（用于排序）
  * colors    封面渐变 [主色, 副色]，主色也是推荐位的强调色
  * glyph     封面大字
  * cover     可选：封面图片地址，填写后替代自动生成的封面
@@ -25,4 +25,19 @@ const GENRES = [
 ];
 
 // 仅列出已上架的游戏。
-const GAMES = [];
+const GAMES = [
+  {
+    id: "tank2d",
+    title: "坦克大战 2D",
+    en: "BATTLE CITY",
+    url: "tank2d.html",
+    cover: "covers/tank2d.webp",
+    desc: "守住鹰徽基地，打穿砖墙，在 35 个关卡中迎击敌军。支持单人、同屏双人和手机触控。",
+    category: "2D",
+    genre: "射击",
+    tags: ["坦克", "基地防守", "同屏双人", "支持手机"],
+    added: "2026-11-19",
+    colors: ["#c6f432", "#2f9e44"],
+    glyph: "坦"
+  }
+];
