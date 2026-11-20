@@ -241,6 +241,7 @@ function loadCustomFromLS(){
 function setMapSource(src){
   mapSource=(src==='custom'&&customPack)?'custom':'classic';
   lsSet(LS_SOURCE,mapSource);
+  readCheckpoint();
 }
 function importMapFile(file){
   if(!file)return;
@@ -274,7 +275,13 @@ var ctx=cv.getContext('2d');
 
 // ---------- 全局状态 ----------
 var state='menu', menuSel=0, twoPlayer=false;
-var MENU_N=3, MENU_Y=[248,280,312];   // 标题菜单：1P / 2P / 导入自定义地图
+var checkpoint=null, checkpointWriteFailed=false;
+var newGameMenu=[
+  {action:'solo',label:'1 PLAYER',y:248},
+  {action:'duo',label:'2 PLAYERS',y:280},
+  {action:'import',label:'CONSTRUCTION',y:312}
+];
+var titleMenu=newGameMenu;
 var stage=0, hiscore=20000;
 var map=[], players=[], enemies=[], bullets=[], explosions=[], floats=[], powerup=null;
 // 砖块 2×2 子块存活位：bit0 左上 / bit1 右上 / bit2 左下 / bit3 右下，满=15。
@@ -752,13 +759,68 @@ function buildKeymap(){
     dirKeys(0,'ArrowUp','ArrowDown','ArrowLeft','ArrowRight');
   }
 }
-function newGame(two){
+// 只记录关卡起点。玩家、砖墙和敌军在读档时按对应地图重新生成。
+function checkpointKey(){return 'tk2d_checkpoint_v1_'+mapSource;}
+function checkpointMap(){
+  return mapSource==='custom' ? JSON.stringify(customPack.stages) : 'classic';
+}
+function updateTitleMenu(save){
+  checkpoint=save;
+  titleMenu=newGameMenu;
+  if(save){
+    var mode=save.players.length===2?'双人':'单人';
+    var resume={action:'resume',label:'继续第 '+(save.stage+1)+' 关 · '+mode,y:216};
+    titleMenu=[resume].concat(newGameMenu);
+  }
+  menuSel=0;
+}
+function validPlayerSave(p){
+  return p && Number.isSafeInteger(p.lives) && p.lives>=0 &&
+    Number.isSafeInteger(p.score) && p.score>=0 &&
+    Number.isInteger(p.star) && p.star>=0 && p.star<=3;
+}
+function readCheckpoint(){
+  var save=safeParse(lsGet(checkpointKey()));
+  var valid=save && save.map===checkpointMap() &&
+    Number.isInteger(save.stage) && save.stage>=0 && save.stage<activeStages().length &&
+    Array.isArray(save.players) && (save.players.length===1||save.players.length===2) &&
+    save.players.every(validPlayerSave) && save.players.some(function(p){return p.lives>0;});
+  checkpointWriteFailed=false;
+  updateTitleMenu(valid?save:null);
+}
+function saveCheckpoint(nextStage){
+  var save=null;
+  if(nextStage<STAGES){
+    save={map:checkpointMap(),stage:nextStage,players:players.map(function(p){
+      return {lives:p.lives,score:p.score,star:p.star};
+    })};
+  }
+  try{
+    if(save)localStorage.setItem(checkpointKey(),JSON.stringify(save));
+    else localStorage.removeItem(checkpointKey());
+    checkpointWriteFailed=false;
+  }catch(e){checkpointWriteFailed=true;}
+  updateTitleMenu(save);
+}
+function newGame(two,save){
   twoPlayer=!!two;
-  STAGES=activeStages().length;   // 按所选地图集确定关卡总数
+  STAGES=activeStages().length;
   buildKeymap();
   players=[makePlayer(0)];
   if(twoPlayer)players.push(makePlayer(1));
-  startStage(0);
+  if(save)players.forEach(function(p,i){
+    p.lives=save.players[i].lives;
+    p.score=save.players[i].score;
+    p.star=save.players[i].star;
+  });
+  startStage(save?save.stage:0);
+  if(!save)saveCheckpoint(0);
+}
+function selectTitleItem(){
+  var action=titleMenu[menuSel].action;
+  if(action==='import')openMapImport();
+  else if(action==='resume')newGame(checkpoint.players.length===2,checkpoint);
+  else newGame(action==='duo');
 }
 function totalScore(){
   var s=0;for(var i=0;i<players.length;i++)s+=players[i].score;return s;
@@ -805,6 +867,7 @@ function updatePlay(){
     if(clearTimer>160){
       if(totalScore()>hiscore)hiscore=totalScore();
       scoreLast=(stage+1>=STAGES);   // 记下是否最后一关，结算页结束后据此通关或进下一关
+      saveCheckpoint(stage+1);
       state='score';scoreTimer=0;
     }
   }
@@ -1327,14 +1390,16 @@ function drawMenu(){
   drawSpaced('CITY',CW/2,178,7);
   // 菜单项（像素体，默认白色；选中靠黄色坦克光标指示）
   ctx.textAlign='left';ctx.font=pf(14);
-  var mx=CW/2-86, labels=['1 PLAYER','2 PLAYERS','CONSTRUCTION'];
-  for(var i=0;i<3;i++){
-    ctx.fillStyle='#ffffff';
-    ctx.fillText(labels[i],mx,MENU_Y[i]);
+  var mx=CW/2-86;
+  for(var i=0;i<titleMenu.length;i++){
+    var item=titleMenu[i], resume=item.action==='resume';
+    ctx.font=resume?'bold 18px sans-serif':pf(14);
+    ctx.fillStyle=resume?'#e8c040':'#ffffff';
+    ctx.fillText(item.label,mx,item.y);
   }
   // 黄色坦克光标（朝右）指向选中项
   ctx.save();
-  ctx.translate(mx-30,MENU_Y[menuSel]-7);
+  ctx.translate(mx-30,titleMenu[menuSel].y-7);
   ctx.rotate(Math.PI/2);
   var spr = tankSprite(playerModels[0], P_CFG[0].pal, (frame >> 3) % 2);
   ctx.drawImage(spr,-13,-13,26,26);
@@ -1412,6 +1477,8 @@ function drawPauseMenu(){
       ctx.fillText('▶',OX+FIELD/2-118,yy);   // 选中三角标
     }
   }
+  ctx.font='14px sans-serif';ctx.textAlign='center';ctx.fillStyle='#e8c040';
+  ctx.fillText(checkpointWriteFailed?'浏览器存储不可用，关闭后无法续玩':'关卡起点已存档 · 第 '+(stage+1)+' 关',OX+FIELD/2,OY+FIELD-54);
   pt(touchControls.matches ? 'TAP AN OPTION' : 'W/S SELECT   ENTER OK   P RESUME',OX+FIELD/2,OY+FIELD-22,'#9a9a9a',9,'center');
   ctx.textAlign='left';
 }
@@ -1521,8 +1588,7 @@ function enterAction(){
   initAudio();
   if(actx&&actx.state==='suspended'){try{actx.resume();}catch(e){}}
   if(state==='menu'){
-    if(menuSel===2)openMapImport();
-    else newGame(menuSel===1);
+    selectTitleItem();
   }
   else if(state==='score'){advanceFromScore();}
   else if(state==='play'||state==='intro'){
@@ -1544,8 +1610,8 @@ function press(code,down){
   }
   if(state==='menu'){
     if(!down)return;
-    if(code==='ArrowUp'||code==='KeyW'){menuSel=(menuSel+MENU_N-1)%MENU_N;sfx('pause');}
-    else if(code==='ArrowDown'||code==='KeyS'){menuSel=(menuSel+1)%MENU_N;sfx('pause');}
+    if(code==='ArrowUp'||code==='KeyW'){menuSel=(menuSel+titleMenu.length-1)%titleMenu.length;sfx('pause');}
+    else if(code==='ArrowDown'||code==='KeyS'){menuSel=(menuSel+1)%titleMenu.length;sfx('pause');}
     else if(code==='KeyC'){setMapSource('classic');sfx('pause');}      // 切回经典原版
     else if(code==='KeyX'){setMapSource('custom');sfx('pause');}       // 用已导入的自定义
     return;
@@ -1590,13 +1656,12 @@ cv.addEventListener('pointerdown',function(ev){
     // 仅在某个菜单项的文字命中框内才响应（含左侧坦克光标）
     var mx=CW/2-86, hl=mx-36, hr=mx+186;
     var hit=-1;
-    for(var mi=0;mi<MENU_N;mi++){
-      if(x>=hl&&x<=hr&&y>=MENU_Y[mi]-16&&y<=MENU_Y[mi]+6){hit=mi;break;}
+    for(var mi=0;mi<titleMenu.length;mi++){
+      if(x>=hl&&x<=hr&&y>=titleMenu[mi].y-16&&y<=titleMenu[mi].y+6){hit=mi;break;}
     }
     if(hit<0)return;          // 点到标题/版权/空白区——只解锁音频，不触发
     menuSel=hit;
-    if(menuSel===2)openMapImport();
-    else newGame(menuSel===1);
+    selectTitleItem();
   }else if(state==='score')advanceFromScore();
   else if(state==='over'||state==='win')state='menu';
 });
@@ -1676,7 +1741,8 @@ window.addEventListener('blur',resetTouchInput);
 
 // ---------- 主循环 ----------
 buildTiles();buildEagle();
-loadCustomFromLS();   // 恢复上次导入的自定义地图与所选来源
+loadCustomFromLS();
+readCheckpoint();
 // 预加载像素字体（标题屏复古字形）；加载完成后主循环自然重绘即生效
 try{ if(document.fonts&&document.fonts.load){document.fonts.load('20px "PS2P"');document.fonts.load('46px "PS2P"');} }catch(e){}
 // ---------- 手柄（Gamepad API，自动接入，无配置）----------
@@ -1725,7 +1791,7 @@ function pollGamepads(){
   // —— 非游戏态：菜单 / 结算 / 胜负 / 暂停 ——
   if(state==='menu'){
     var nav=anyUp?-1:(anyDown?1:0);
-    if(nav!==0&&gpSys.nav===0){menuSel=(menuSel+nav+MENU_N)%MENU_N;sfx('pause');}
+    if(nav!==0&&gpSys.nav===0){menuSel=(menuSel+nav+titleMenu.length)%titleMenu.length;sfx('pause');}
     gpSys.nav=nav;
     if(startEdge||fireEdge)enterAction();
     gpClearSlot(0);gpClearSlot(1);return;
